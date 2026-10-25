@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: cleanup
 spec:
-  description: Clean the source workspace before running the pipeline.
+  description: Clean the source workspace before running the pipeline. The remove step explicitly deletes the contents of WORKSPACE_SOURCE_PATH.
   workspaces:
     - name: source
   steps:
