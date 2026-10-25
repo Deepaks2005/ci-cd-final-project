@@ -3,7 +3,6 @@ kind: Task
 metadata:
   name: cleanup
 spec:
-  description: Clean the source workspace before running the pipeline. The remove step explicitly deletes the contents of WORKSPACE_SOURCE_PATH.
   workspaces:
     - name: source
   steps:
@@ -13,31 +12,19 @@ spec:
         - name: WORKSPACE_SOURCE_PATH
           value: $(workspaces.source.path)
       workingDir: $(workspaces.source.path)
-      securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
       script: |
-        #!/usr/bin/env sh
+        #!/bin/sh
         set -eu
-        echo "Removing files from WORKSPACE_SOURCE_PATH=${WORKSPACE_SOURCE_PATH}"
-        if [ -d "${WORKSPACE_SOURCE_PATH}" ]; then
-          find "${WORKSPACE_SOURCE_PATH}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
-        fi
-
+        echo "Cleaning ${WORKSPACE_SOURCE_PATH}"
+        find "${WORKSPACE_SOURCE_PATH}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: nose
 spec:
-  description: Run Python unit tests with Nose.
   workspaces:
     - name: source
-  params:
-    - name: args
-      description: Arguments to pass to nose
-      type: string
-      default: "-v"
   steps:
     - name: Run unit tests with nose
       image: python:3.9-slim
@@ -45,11 +32,5 @@ spec:
       script: |
         #!/bin/bash
         set -eu
-        python -m pip install --upgrade pip wheel
         pip install nose
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        fi
-        echo "Running unit tests with Nose"
-        echo "Step: Run unit tests with nose"
-        nosetests $(params.args)
+        nosetests -v
