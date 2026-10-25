@@ -51,4 +51,5 @@ spec:
           pip install -r requirements.txt
         fi
         echo "Running unit tests with Nose"
+        echo "Step: Run unit tests with nose"
         nosetests $(params.args)
