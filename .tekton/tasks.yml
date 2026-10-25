@@ -3,17 +3,22 @@ kind: Task
 metadata:
   name: cleanup
 spec:
+  description: Clean the source workspace before running the pipeline.
   params:
     - name: WORKSPACE_SOURCE_PATH
       description: The path of the workspace source
       type: string
   steps:
     - name: remove-workspace-files
-      image: alpine:latest
+      image: alpine:3.20
       script: |
-        #!/usr/bin/env sh
-        echo "Cleaning up workspace at $(params.WORKSPACE_SOURCE_PATH)"
-        rm -rf $(params.WORKSPACE_SOURCE_PATH)/*
+        #!/bin/sh
+        set -eu
+        WORKSPACE_SOURCE_PATH="$(params.WORKSPACE_SOURCE_PATH)"
+        echo "Cleaning workspace: ${WORKSPACE_SOURCE_PATH}"
+        rm -rf "${WORKSPACE_SOURCE_PATH:?}"/*
+        rm -rf "${WORKSPACE_SOURCE_PATH}"/.[!.]*
+        rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
 
 ---
 apiVersion: tekton.dev/v1beta1
@@ -21,15 +26,21 @@ kind: Task
 metadata:
   name: nose
 spec:
+  description: Run Python unit tests with Nose.
   params:
     - name: WORKSPACE_SOURCE_PATH
       description: The path of the workspace source
       type: string
   steps:
-    - name: Run unit tests with nose
-      image: python:3.9-slim
+    - name: run-unit-tests-with-nose
+      image: python:3.11-slim
       workingDir: $(params.WORKSPACE_SOURCE_PATH)
       script: |
-        #!/usr/bin/env python3
-        pip install --no-cache-dir -r requirements.txt
+        #!/bin/sh
+        set -eu
+        python -m pip install --no-cache-dir nose
+        if [ -f requirements.txt ]; then
+          python -m pip install --no-cache-dir -r requirements.txt
+        fi
+        echo "Running unit tests with Nose"
         nosetests -v
